@@ -54,23 +54,38 @@ def main() -> None:
         "Gerencia de Recursos Humanos" if es_admin else (perfil.get("position") or "Colaborador"),
     )
 
+    # url_path debe ser único en cada página: todas las vistas exponen una función
+    # llamada render(), y Streamlit deriva la ruta del nombre de la función si no
+    # se le indica una. Sin esto, la navegación falla con "pathnames must be unique".
     paginas_empleado = [
-        st.Page(clock.render, title="Marcar jornada", icon=":material/schedule:", default=True),
-        st.Page(history.render, title="Mi historial", icon=":material/calendar_month:"),
-        st.Page(stats.render, title="Mis estadísticas", icon=":material/insights:"),
-        st.Page(birthdays.render, title="Cumpleaños", icon=":material/cake:"),
-        st.Page(profile.render, title="Mi perfil", icon=":material/person:"),
+        st.Page(clock.render, title="Marcar jornada", icon=":material/schedule:",
+                url_path="marcar", default=True),
+        st.Page(history.render, title="Mi historial", icon=":material/calendar_month:",
+                url_path="historial"),
+        st.Page(stats.render, title="Mis estadísticas", icon=":material/insights:",
+                url_path="estadisticas"),
+        st.Page(birthdays.render, title="Cumpleaños", icon=":material/cake:",
+                url_path="cumpleanos"),
+        st.Page(profile.render, title="Mi perfil", icon=":material/person:",
+                url_path="perfil"),
     ]
 
     if es_admin:
         paginas_admin = [
-            st.Page(admin_live.render, title="Panel en vivo", icon=":material/monitor_heart:"),
-            st.Page(admin_records.render, title="Todos los registros", icon=":material/table_rows:"),
-            st.Page(admin_employees.render, title="Empleados", icon=":material/groups:"),
-            st.Page(admin_exceptions.render, title="Excepciones y asuetos", icon=":material/event_busy:"),
-            st.Page(admin_requests.render, title="Solicitudes", icon=":material/inbox:"),
-            st.Page(admin_reports.render, title="Reportes", icon=":material/download:"),
-            st.Page(admin_settings.render, title="Configuración", icon=":material/settings:"),
+            st.Page(admin_live.render, title="Panel en vivo", icon=":material/monitor_heart:",
+                    url_path="panel"),
+            st.Page(admin_records.render, title="Todos los registros", icon=":material/table_rows:",
+                    url_path="registros"),
+            st.Page(admin_employees.render, title="Empleados", icon=":material/groups:",
+                    url_path="empleados"),
+            st.Page(admin_exceptions.render, title="Excepciones y asuetos", icon=":material/event_busy:",
+                    url_path="excepciones"),
+            st.Page(admin_requests.render, title="Solicitudes", icon=":material/inbox:",
+                    url_path="solicitudes"),
+            st.Page(admin_reports.render, title="Reportes", icon=":material/download:",
+                    url_path="reportes"),
+            st.Page(admin_settings.render, title="Configuración", icon=":material/settings:",
+                    url_path="configuracion"),
         ]
         navegacion = st.navigation(
             {"Mi asistencia": paginas_empleado, "Gerencia": paginas_admin}
