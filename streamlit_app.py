@@ -1,5 +1,5 @@
 """
-Control de Asistencia — Rescue de Planet de Guatemala
+Control de Asistencia — Rescue The Planet Guatemala
 Punto de entrada de la aplicación.
 """
 
