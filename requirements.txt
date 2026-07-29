@@ -1,0 +1,9 @@
+streamlit>=1.49,<2
+supabase>=2.9,<3
+pandas>=2.2
+numpy>=1.26
+plotly>=5.22
+XlsxWriter>=3.2
+streamlit-js-eval>=0.1.7
+python-dateutil>=2.9
+tzdata>=2024.1
