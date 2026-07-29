@@ -1,0 +1,32 @@
+name: Cierre automático de jornadas
+
+# Corre todos los días a las 05:00 UTC = 23:00 hora de Guatemala del día anterior.
+# Cierra las jornadas que quedaron abiertas y las marca para revisión de la gerencia.
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  cerrar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar a la función de Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_KEY" ]; then
+            echo "Faltan los secretos SUPABASE_URL y SUPABASE_SERVICE_KEY del repositorio."
+            exit 1
+          fi
+          respuesta=$(curl -s -w "\n%{http_code}" -X POST \
+            "$SUPABASE_URL/rest/v1/rpc/auto_close_open_shifts" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          cuerpo=$(echo "$respuesta" | head -n -1)
+          codigo=$(echo "$respuesta" | tail -n 1)
+          echo "HTTP $codigo · jornadas cerradas: $cuerpo"
+          if [ "$codigo" != "200" ]; then exit 1; fi
