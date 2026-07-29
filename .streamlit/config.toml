@@ -1,0 +1,20 @@
+[theme]
+base = "dark"
+primaryColor = "#E8B84B"
+backgroundColor = "#0B0B0D"
+secondaryBackgroundColor = "#17181C"
+textColor = "#F5F5F4"
+font = "sans serif"
+
+[server]
+enableXsrfProtection = true
+# Sirve la carpeta ./static en <url-de-la-app>/app/static/…
+# Necesario para el manifiesto y los íconos de la PWA.
+enableStaticServing = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showErrorDetails = false
+toolbarMode = "minimal"
