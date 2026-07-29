@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-ORG_NAME = "Rescue de Planet de Guatemala"
+ORG_NAME = "Rescue The Planet Guatemala"
 APP_NAME = "Control de Asistencia"
 TIMEZONE = "America/Guatemala"
 
