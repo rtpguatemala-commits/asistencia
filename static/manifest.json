@@ -1,7 +1,7 @@
 {
-  "name": "Asistencia · Rescue de Planet de Guatemala",
+  "name": "Asistencia · Rescue The Planet Guatemala",
   "short_name": "Asistencia RDP",
-  "description": "Control de asistencia para el equipo de Rescue de Planet de Guatemala.",
+  "description": "Control de asistencia para el equipo de Rescue The Planet Guatemala.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
