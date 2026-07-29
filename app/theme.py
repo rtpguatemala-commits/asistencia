@@ -54,6 +54,13 @@ def pwa_head() -> None:
     con JavaScript. Si falla, la app funciona igual: solo se pierde la
     instalación con ícono propio.
     """
+    # st.iframe reemplaza a st.components.v1.html a partir de junio de 2026.
+    # Se intenta el nuevo primero y se cae al anterior en versiones viejas.
+    try:
+        st.iframe(PWA_SNIPPET, height=1, width=1)
+        return
+    except Exception:
+        pass
     try:
         import streamlit.components.v1 as components
 
@@ -181,6 +188,11 @@ def inject_css() -> None:
   /* Ocultar el pie de página por defecto de Streamlit */
   footer {{ visibility: hidden; }}
   #MainMenu {{ visibility: hidden; }}
+
+  /* El iframe de 1 píxel que instala el manifiesto de la PWA no debe ocupar espacio */
+  iframe[height="1"] {{ display: none !important; }}
+  .stIFrame:has(iframe[height="1"]) {{ display: none !important; }}
+  .stCustomComponentV1[height="1"] {{ display: none !important; }}
 </style>
 """,
         unsafe_allow_html=True,
