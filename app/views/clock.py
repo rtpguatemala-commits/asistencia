@@ -119,7 +119,8 @@ def _location_panel(mode: str, settings: dict[str, Any], slot: str) -> dict[str,
     return evaluation
 
 
-def _do_clock(action: str, mode: str, location: dict[str, Any] | None, reason: str) -> None:
+def _do_clock(action: str, mode: str, location: dict[str, Any] | None, reason: str,
+              summary: str = "") -> None:
     payload = {
         "p_mode": mode,
         "p_lat": location["lat"] if location else None,
@@ -127,6 +128,8 @@ def _do_clock(action: str, mode: str, location: dict[str, Any] | None, reason: s
         "p_accuracy": location["accuracy"] if location else None,
         "p_reason": reason or None,
     }
+    if action == "clock_out":
+        payload["p_summary"] = summary.strip() or None
     try:
         db.client().rpc(action, payload).execute()
         st.session_state["clock_feedback"] = (
@@ -166,22 +169,21 @@ def render() -> None:
         clock_in = to_gt(record.get("clock_in_at")) if record else None
         clock_out = to_gt(record.get("clock_out_at")) if record else None
 
-        theme.card_open("Tu jornada de hoy")
-        c1, c2, c3 = st.columns(3)
-        c1.markdown(theme.stat("Entrada", fmt_time(clock_in)), unsafe_allow_html=True)
-        c2.markdown(theme.stat("Salida", fmt_time(clock_out)), unsafe_allow_html=True)
-        net = record.get("net_minutes") if record else None
-        c3.markdown(
-            theme.stat("Horas netas", minutes_to_hhmm(net) if net is not None else "—"),
-            unsafe_allow_html=True,
-        )
-        if record:
-            st.markdown(theme.badge(record.get("status", "open")), unsafe_allow_html=True)
-            if record.get("late_minutes"):
-                st.caption(f"Retraso registrado: {record['late_minutes']} minutos.")
-            if record.get("clock_in_reason"):
-                st.caption(f"Motivo de ubicación: {record['clock_in_reason']}")
-        theme.card_close()
+        with theme.card("Tu jornada de hoy"):
+            c1, c2, c3 = st.columns(3)
+            c1.markdown(theme.stat("Entrada", fmt_time(clock_in)), unsafe_allow_html=True)
+            c2.markdown(theme.stat("Salida", fmt_time(clock_out)), unsafe_allow_html=True)
+            net = record.get("net_minutes") if record else None
+            c3.markdown(
+                theme.stat("Horas netas", minutes_to_hhmm(net) if net is not None else "—"),
+                unsafe_allow_html=True,
+            )
+            if record:
+                st.markdown(theme.badge(record.get("status", "open")), unsafe_allow_html=True)
+                if record.get("late_minutes"):
+                    st.caption(f"Retraso registrado: {record['late_minutes']} minutos.")
+                if record.get("clock_in_reason"):
+                    st.caption(f"Motivo de ubicación: {record['clock_in_reason']}")
 
         if active and active.get("work_date") != str(today_gt()):
             st.warning(
@@ -195,55 +197,102 @@ def render() -> None:
                 theme.note("Ya completaste tu jornada de hoy. Que descanses.", "ok"),
                 unsafe_allow_html=True,
             )
+            if record.get("work_summary"):
+                with theme.card("Lo que reportaste hoy"):
+                    st.write(record["work_summary"])
             return
 
         accion = "clock_out" if active else "clock_in"
         etiqueta = "Terminar Jornada" if active else "Empezar Jornada"
         slot = "out" if active else "in"
 
-        theme.card_open(etiqueta)
-        mode_label = st.radio(
-            "¿Desde dónde marcas?",
-            ["En el Edificio", "Otro lugar"],
-            horizontal=True,
-            key=f"mode_{slot}",
-        )
-        mode = "building" if mode_label == "En el Edificio" else "other"
-
-        reason = ""
-        if mode == "other":
-            reason = st.text_input(
-                "Motivo (obligatorio)",
-                key=f"reason_{slot}",
-                placeholder="Visita de campo en Chimaltenango, trabajo desde casa, etc.",
-                max_chars=200,
+        with theme.card(etiqueta):
+            mode_label = st.radio(
+                "¿Desde dónde marcas?",
+                ["En el Edificio", "Otro lugar"],
+                horizontal=True,
+                key=f"mode_{slot}",
             )
+            mode = "building" if mode_label == "En el Edificio" else "other"
 
-        evaluation = _location_panel(mode, settings, slot)
-        location = st.session_state.get("geo")
+            reason = ""
+            if mode == "other":
+                reason = st.text_input(
+                    "Motivo (obligatorio)",
+                    key=f"reason_{slot}",
+                    placeholder="Visita de campo en Chimaltenango, trabajo desde casa, etc.",
+                    max_chars=200,
+                )
 
-        puede = True
-        aviso = ""
-        if mode == "building":
-            if location is None:
-                puede, aviso = False, "Esperando la ubicación de tu dispositivo."
-            elif not evaluation["ok"]:
-                puede, aviso = False, evaluation["message"]
-        else:
-            if len(reason.strip()) < 5:
-                puede, aviso = False, "Escribe el motivo (mínimo 5 caracteres)."
+            # ---- Bitácora de tareas del día (solo al cerrar la jornada) ----
+            summary = ""
+            min_chars = int(settings.get("work_summary_min_chars") or 20)
+            summary_required = bool(settings.get("require_work_summary", True))
+            if accion == "clock_out":
+                st.markdown(
+                    theme.note(
+                        "<b>Antes de cerrar tu jornada</b>, cuéntanos en qué trabajaste hoy. "
+                        "Este resumen le sirve a la gerencia para dar seguimiento y queda "
+                        "guardado en tu historial.",
+                        "info",
+                    ),
+                    unsafe_allow_html=True,
+                )
+                summary = st.text_area(
+                    "¿Qué tareas o funciones realizaste hoy?"
+                    + ("" if summary_required else " (opcional)"),
+                    key=f"summary_{slot}",
+                    height=140,
+                    max_chars=1500,
+                    placeholder=(
+                        "Ejemplo: Visité dos escuelas del programa de reforestación en Villa Nueva, "
+                        "levanté el listado de 40 participantes, actualicé el expediente de donantes "
+                        "y dejé preparada la presentación para la reunión del jueves."
+                    ),
+                )
+                escritos = len(summary.strip())
+                if summary_required:
+                    color = COLORS["success"] if escritos >= min_chars else COLORS["muted"]
+                    st.markdown(
+                        f'<div style="text-align:right;font-size:.74rem;color:{color}">'
+                        f"{escritos} de {min_chars} caracteres mínimos</div>",
+                        unsafe_allow_html=True,
+                    )
 
-        if st.button(etiqueta, type="primary", width="stretch",
-                     disabled=not puede, key=f"btn_{slot}"):
-            _do_clock(accion, mode, location, reason)
+            evaluation = _location_panel(mode, settings, slot)
+            location = st.session_state.get("geo")
 
-        if not puede and aviso:
-            st.caption(aviso)
+            puede = True
+            aviso = ""
+            if mode == "building":
+                if location is None:
+                    puede, aviso = False, "Esperando la ubicación de tu dispositivo."
+                elif not evaluation["ok"]:
+                    puede, aviso = False, evaluation["message"]
+            else:
+                if len(reason.strip()) < 5:
+                    puede, aviso = False, "Escribe el motivo (mínimo 5 caracteres)."
 
-        if mode == "building":
-            if st.button("Volver a intentar la ubicación", width="stretch",
-                         key=f"retry_{slot}"):
-                st.session_state.pop("geo", None)
-                st.rerun()
+            # La bitácora NO deshabilita el botón: Streamlit solo registra el texto
+            # cuando el usuario toca fuera del cuadro, y un botón gris sin explicación
+            # confunde. Se valida al presionar y, si falta, se avisa con claridad.
+            if st.button(etiqueta, type="primary", width="stretch",
+                         disabled=not puede, key=f"btn_{slot}"):
+                if accion == "clock_out" and summary_required and len(summary.strip()) < min_chars:
+                    st.warning(
+                        f"Falta describir tus tareas del día. Escribe al menos {min_chars} "
+                        f"caracteres (llevas {len(summary.strip())}) y vuelve a presionar "
+                        "Terminar Jornada."
+                    )
+                else:
+                    _do_clock(accion, mode, location, reason, summary)
 
-        theme.card_close()
+            if not puede and aviso:
+                st.caption(aviso)
+
+            if mode == "building":
+                if st.button("Volver a intentar la ubicación", width="stretch",
+                             key=f"retry_{slot}"):
+                    st.session_state.pop("geo", None)
+                    st.rerun()
+
