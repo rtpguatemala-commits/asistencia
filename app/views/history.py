@@ -91,6 +91,7 @@ def detail_table(grid: pd.DataFrame) -> pd.DataFrame:
         "Nota": grid.apply(
             lambda r: r["asueto"] or r["excepcion"] or r["observacion"] or "", axis=1
         ),
+        "Tareas reportadas": grid.get("bitacora", ""),
     })
     return view
 
