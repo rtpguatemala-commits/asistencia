@@ -97,10 +97,16 @@ def build_grid(
             elif att is not None:
                 status = att.get("status") or "open"
                 expected = exp_min if hol is None else 0
+                # Si la gerencia justificó el día, deja de contar como incidencia
+                if exc is not None and status in (
+                    "late", "early_leave", "late_and_early", "absent"
+                ):
+                    status = "exception"
             elif exc is not None:
                 status = "exception"
                 expected = 0
-            elif day > today:
+            elif day >= today:
+                # El día de hoy todavía está en curso: no es una ausencia
                 status = "future"
                 expected = exp_min
             else:
@@ -145,6 +151,7 @@ def build_grid(
                 "revisar": bool(att.get("needs_review")) if att else False,
                 "auto": bool(att.get("auto_closed")) if att else False,
                 "observacion": (att.get("note") or "") if att else "",
+                "bitacora": (att.get("work_summary") or "") if att else "",
                 "attendance_id": att.get("id") if att else None,
             })
 
