@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+from contextlib import contextmanager
 from pathlib import Path
 
 import streamlit as st
@@ -133,8 +134,15 @@ def inject_css() -> None:
       background: {c['surface']}; border: 1px solid {c['border']};
       border-radius: 16px; padding: 1rem 1.15rem; margin-bottom: .8rem;
   }}
-  .rdp-card h4 {{ margin: 0 0 .55rem 0; font-size: .78rem; letter-spacing: .09em;
-                  text-transform: uppercase; color: {c['muted']}; font-weight: 700; }}
+  .rdp-card h4, .rdp-card-title {{
+      margin: 0 0 .5rem 0; font-size: .78rem; letter-spacing: .09em;
+      text-transform: uppercase; color: {c['muted']}; font-weight: 700; }}
+
+  /* Contenedor con borde de Streamlit, con la paleta de la organización */
+  [data-testid="stVerticalBlockBorderWrapper"] {{
+      border-radius: 16px; border-color: {c['border']} !important;
+      background: {c['surface']};
+  }}
 
   .rdp-stat {{
       background: {c['surface']}; border: 1px solid {c['border']};
@@ -252,10 +260,17 @@ def note(text: str, kind: str = "info") -> str:
     )
 
 
-def card_open(title: str = "") -> None:
-    heading = f"<h4>{title}</h4>" if title else ""
-    st.markdown(f'<div class="rdp-card">{heading}', unsafe_allow_html=True)
+@contextmanager
+def card(title: str = ""):
+    """Tarjeta con borde que sí contiene lo que va adentro.
 
-
-def card_close() -> None:
-    st.markdown("</div>", unsafe_allow_html=True)
+    Se usa el contenedor nativo de Streamlit en lugar de HTML suelto: al
+    inyectar un <div> abierto con st.markdown, Streamlit lo cierra solo y
+    el contenido terminaba fuera del recuadro.
+    """
+    caja = st.container(border=True)
+    with caja:
+        if title:
+            st.markdown(f'<div class="rdp-card-title">{title}</div>',
+                        unsafe_allow_html=True)
+        yield caja
