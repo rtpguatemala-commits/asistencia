@@ -42,6 +42,7 @@ DETAIL_COLUMNS = [
     ("Estado",            "estado_texto",     18),
     ("Asueto",            "asueto",           24),
     ("Excepción",         "excepcion",        20),
+    ("Tareas reportadas", "bitacora",         60),
     ("Observación",       "observacion",      30),
 ]
 
