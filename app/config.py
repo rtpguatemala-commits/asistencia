@@ -54,8 +54,22 @@ EXCEPTION_LABELS = {
     "day_off":        "Día libre",
     "sick_leave":     "Incapacidad / médico",
     "personal_leave": "Permiso personal",
-    "justified_late": "Tardanza justificada",
+    "justified_late": "Llegada tarde justificada",
+    "early_leave_ok": "Salida anticipada autorizada",
+    "absence_ok":     "Ausencia justificada",
+    "field_work":     "Trabajo de campo / comisión",
 }
+
+# Tipos que se ofrecen al justificar un día suelto desde el panel de la gerencia
+QUICK_EXCEPTION_TYPES = [
+    "early_leave_ok",
+    "justified_late",
+    "absence_ok",
+    "sick_leave",
+    "personal_leave",
+    "field_work",
+    "day_off",
+]
 
 DAY_NAMES = {
     1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves",
