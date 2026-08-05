@@ -55,6 +55,21 @@ def render() -> None:
                 "Cerrar automáticamente las jornadas olvidadas",
                 value=bool(settings.get("auto_close_enabled", True)),
             )
+
+            st.divider()
+            st.markdown("**Bitácora de tareas**")
+            c7, c8 = st.columns(2)
+            pedir_bitacora = c7.checkbox(
+                "Exigir el reporte de tareas al cerrar la jornada",
+                value=bool(settings.get("require_work_summary", True)),
+                help="Si lo desactivas, el campo sigue apareciendo pero se puede dejar vacío.",
+            )
+            minimo_bitacora = c8.number_input(
+                "Mínimo de caracteres",
+                min_value=0, max_value=500, step=10,
+                value=int(settings.get("work_summary_min_chars") or 20),
+            )
+
             guardar = st.form_submit_button("Guardar configuración", type="primary",
                                             width="stretch")
 
@@ -67,6 +82,8 @@ def render() -> None:
                     "max_gps_accuracy_m": int(precision),
                     "default_grace_minutes": int(tolerancia),
                     "auto_close_enabled": bool(autocierre),
+                    "require_work_summary": bool(pedir_bitacora),
+                    "work_summary_min_chars": int(minimo_bitacora),
                 }).eq("id", 1).execute()
                 db.log_action(auth.current_user_id(), auth.current_profile().get("full_name"),
                               "update_settings", "settings", "1",
