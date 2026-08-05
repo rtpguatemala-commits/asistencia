@@ -77,6 +77,9 @@ def render() -> None:
 """,
             unsafe_allow_html=True,
         )
+        if row.get("bitacora"):
+            with st.expander(f"Tareas que reportó {row['empleado'].split()[0]} hoy"):
+                st.write(row["bitacora"])
 
     # ------------- Alertas -------------
     st.write("")
